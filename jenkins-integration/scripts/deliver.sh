@@ -1,7 +1,5 @@
 #!/bin/bash -x
 
-export SIGNCLIENT_HOME=$WORKSPACE/jenkins/scripts/signserver
-echo $WORKSPACE/jenkins/scripts/signserver/bin
 echo 'The following complex command extracts the value of the <name/> element'
 echo 'within <project/> of your Java/Maven project''s "pom.xml" file.'
 set -x
