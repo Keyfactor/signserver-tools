@@ -13,5 +13,5 @@ We are glad to get pull requests for improvements to the tools.
 "Not part of the product" means that they are not officially supported tools, and they may work or not depending on your version of SignServer and the tools.
 
 # License
-Tools are, if not noted otherwise, subject to the same license as SignServer. LGPL v2.1 or later.
+LGPL v2.1 or later.
 
