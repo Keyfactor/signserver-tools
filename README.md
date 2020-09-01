@@ -1,5 +1,5 @@
 ![PrimeKey](primekey_logo.png)
-# Description
+# SignServer Tools
 Tools, that are not part of the SignServer product, for usage with SignServer. The tools are provided _as is_, and you are free to customize accordingly for your use case. 
 
 Have fun!
