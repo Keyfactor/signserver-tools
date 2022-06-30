@@ -1,0 +1,52 @@
+To run demo.
+
+-------------------------------------------------------------------------
+1)
+
+Create directory "trust"
+
+$ mkdir trust
+
+Place the trusted CA issuing a cert using a legacy algorithm (e.g. RSA)
+as ca.pem in the trust directory
+
+Export the cert (for example self-signed) from the PQ signer
+(with a .crt extension) in the trust directory.
+
+Start the demo script
+
+$ ./update-firmware.sh
+
+Setup two CMSSigners (one using an old algorihm, and one
+using SPHINCS+, see instructions in confluence).
+
+Set DETACTED_SIGNATURE=true
+
+--------------------------------------------------------------------------
+2)
+
+Create a sample text file named "firmware" containg a dummy string,
+such as "1" indicating a version number).
+
+Sign this file using a CMSSigner using a non-PQ algorithm
+(call the output firmware.p7s)
+
+Copy these files to the demo folder (with the script running).
+This will simulate a previous installation using a non-PQ algorithm.
+
+The signature will be verified with openssl.
+
+--------------------------------------------------------------------------
+3)
+
+Then to perform a simulated "firmware upgrade", repeat steps under 2)
+above, using a new number in the file (e.g. "2"). Sign this
+file using the PQ-enabled signer.
+
+This time the script will perform PQ verification using the
+PoC verification module, and if successful replace the "installed firmware"
+in the "installed-firmware" directory.
+
+In case of failed verification (e.g. signing an upgrade with non-PQ algorithm)
+the firmware and signature will be moved to "failed-firmware" with timestamps
+added to allow investigation.
