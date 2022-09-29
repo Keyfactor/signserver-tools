@@ -23,12 +23,12 @@
         <dependency>
             <artifactId>bcpkix-jdk18on</artifactId>
             <groupId>org.bouncycastle</groupId>
-            <version>1.71</version>
+            <version>1.71.1</version>
         </dependency>
         <dependency>
             <artifactId>bcprov-jdk18on</artifactId>
             <groupId>org.bouncycastle</groupId>
-            <version>1.71</version>
+            <version>1.71.1</version>
             <type>jar</type>
         </dependency>
     </dependencies>
