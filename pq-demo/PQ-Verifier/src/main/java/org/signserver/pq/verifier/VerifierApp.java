@@ -55,8 +55,11 @@ import org.bouncycastle.cms.CMSProcessableFile;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 
@@ -122,6 +125,9 @@ public class VerifierApp {
 
         X509Certificate validatedSigner = null;
 
+        // add BCPQC provider, needed for Dilithium
+        Security.addProvider(new BouncyCastlePQCProvider());
+
         while (it.hasNext()) {
             SignerInformation signer = it.next();
             Collection certCollection = certStore.getMatches(signer.getSID());
@@ -133,12 +139,28 @@ public class VerifierApp {
             System.out.println("Verifying signer " + xcert.getSubjectX500Principal());
 
             PublicKey publicKey = xcert.getPublicKey();
+            final String algOid = signer.getEncryptionAlgOID();
+            
+            System.out.println("alg: " + algOid);
 
-            System.out.println("alg: " + signer.getEncryptionAlgOID());
-
-            // hardcoded, assume SPHICS+
-            if ("1.3.6.1.4.1.22554.2.5".equals(signer.getEncryptionAlgOID()) &&
-                    signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(publicKey))) {
+            final boolean verified;
+            final JcaSimpleSignerInfoVerifierBuilder verifierBuilder =
+                    new JcaSimpleSignerInfoVerifierBuilder();
+            String sigProvider = null; // provider name to use when verifying signature
+            
+            if (algOid.startsWith("1.3.6.1.4.1.22554.2.5")) {
+                // SPHINCS+
+                verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
+                sigProvider = "BC";
+            } else if ("1.3.6.1.4.1.2.267.7.6.5".equals(algOid)) {
+                // Dilithium
+                verified = signer.verify(verifierBuilder.build(publicKey));
+                sigProvider = "BCPQC";
+            } else {
+                verified = false;
+            }
+            
+            if (verified) {
                 System.out.println("Verified");
 
                 X509CertSelector certSelector = new X509CertSelector();
@@ -158,7 +180,9 @@ public class VerifierApp {
                         })));
 
                 try {
-                    validatedSigner = validate(xcertStore, certSelector, trustAnchors, false);
+                    validatedSigner =
+                        validate(xcertStore, certSelector, trustAnchors, false,
+                                 sigProvider);
                     if (validatedSigner != null) {
                         break;
                     }
@@ -179,7 +203,13 @@ public class VerifierApp {
         }
     }
 
-    private static X509Certificate validate(CertStore certStore, X509CertSelector certSelector, Set<TrustAnchor> trustAnchors, boolean revocationEnabled) throws CertificateException, CertPathValidatorException, InvalidAlgorithmParameterException, Exception {
+    private static X509Certificate validate(CertStore certStore,
+                                            X509CertSelector certSelector,
+                                            Set<TrustAnchor> trustAnchors,
+                                            boolean revocationEnabled,
+                                            String sigProvider)
+            throws CertificateException, CertPathValidatorException,
+                   InvalidAlgorithmParameterException, Exception {
 
         PKIXBuilderParameters builderParams;
         builderParams = new PKIXBuilderParameters(trustAnchors, certSelector);
@@ -204,7 +234,7 @@ public class VerifierApp {
             builderParams.setRevocationEnabled(false);
             //builderParams.setMaxPathLength(maxPathLength);
             builderParams.setDate(new Date());
-            builderParams.setSigProvider("BC");
+            builderParams.setSigProvider(sigProvider);
 
             builderRes = (PKIXCertPathBuilderResult) builder.build(builderParams);
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException |
