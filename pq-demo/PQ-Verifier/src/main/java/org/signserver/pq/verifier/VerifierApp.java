@@ -42,6 +42,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +50,7 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cms.CMSProcessableFile;
@@ -147,19 +149,29 @@ public class VerifierApp {
             final JcaSimpleSignerInfoVerifierBuilder verifierBuilder =
                     new JcaSimpleSignerInfoVerifierBuilder();
             String sigProvider = null; // provider name to use when verifying signature
-            
-            if (algOid.startsWith("1.3.6.1.4.1.22554.2.5")) {
-                // SPHINCS+
-                verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
-                sigProvider = "BC";
-            } else if ("1.3.6.1.4.1.2.267.7.6.5".equals(algOid)) {
+            String algName;
+
+            HashMap<String, String> algNames = new HashMap<>();
+            algNames.put(BCObjectIdentifiers.dilithium2.getId(), "Dilithium2");
+            algNames.put(BCObjectIdentifiers.dilithium3.getId(), "Dilithium3");
+            algNames.put(BCObjectIdentifiers.dilithium5.getId(), "Dilithium5");
+
+            algName = algNames.get(algOid);
+
+            if (algName != null && algName.startsWith("Dilithium")) {
                 // Dilithium
                 verified = signer.verify(verifierBuilder.build(publicKey));
                 sigProvider = "BCPQC";
+            } else if (algOid.startsWith("1.3.6.1.4.1.22554.2.5")) {
+                // SPHINCS+
+                algName = "SPINCS+";
+                verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
+                sigProvider = "BC";
             } else {
+                System.out.println("Unsupported Algorithm");
                 verified = false;
             }
-            
+            System.out.println("algName: " + algName);
             if (verified) {
                 System.out.println("Verified");
 
