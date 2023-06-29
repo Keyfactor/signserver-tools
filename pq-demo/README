@@ -1,3 +1,21 @@
+To build
+-------------------------------------------------------------------------
+
+Download BouncyCastle 1.73b.12 beta JARs from https://downloads.bouncycastle.org/betas/
+
+https://downloads.bouncycastle.org/betas/bcpkix-jdk18on-173b12.jar
+https://downloads.bouncycastle.org/betas/bcprov-jdk18on-173b12.jar
+https://downloads.bouncycastle.org/betas/bcutil-jdk18on-173b12.jar
+
+Install JARs to the local Maven repository:
+
+$ mvn install:install-file -Dfile=bcpkix-jdk18on-173b12.jar -DgroupId=org.bouncycastle -DartifactId=bcpkix-jdk18on -Dversion=1.73b.12 -Dpackaging=jar
+$ mvn install:install-file -Dfile=bcprov-jdk18on-173b12.jar -DgroupId=org.bouncycastle -DartifactId=bcprov-jdk18on -Dversion=1.73b.12 -Dpackaging=jar
+$ mvn install:install-file -Dfile=bcutil-jdk18on-173b12.jar -DgroupId=org.bouncycastle -DartifactId=bcutil-jdk18on -Dversion=1.73b.12 -Dpackaging=jar
+
+$ cd pq-demo/PQ-Verifier
+$ mvn install
+
 To run demo.
 
 -------------------------------------------------------------------------
@@ -18,7 +36,7 @@ Start the demo script
 $ ./update-firmware.sh
 
 Setup two CMSSigners (one using an old algorihm, and one
-using SPHINCS+, see instructions in confluence).
+using SPHINCS+, or Dilithium see instructions in confluence).
 
 Set DETACTED_SIGNATURE=true
 

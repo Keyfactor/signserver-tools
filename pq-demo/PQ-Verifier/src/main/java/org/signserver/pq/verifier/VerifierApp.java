@@ -42,6 +42,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -49,14 +50,18 @@ import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cms.CMSProcessableFile;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 
@@ -122,6 +127,9 @@ public class VerifierApp {
 
         X509Certificate validatedSigner = null;
 
+        // add BCPQC provider, needed for Dilithium
+        Security.addProvider(new BouncyCastlePQCProvider());
+
         while (it.hasNext()) {
             SignerInformation signer = it.next();
             Collection certCollection = certStore.getMatches(signer.getSID());
@@ -133,12 +141,38 @@ public class VerifierApp {
             System.out.println("Verifying signer " + xcert.getSubjectX500Principal());
 
             PublicKey publicKey = xcert.getPublicKey();
+            final String algOid = signer.getEncryptionAlgOID();
+            
+            System.out.println("alg: " + algOid);
 
-            System.out.println("alg: " + signer.getEncryptionAlgOID());
+            final boolean verified;
+            final JcaSimpleSignerInfoVerifierBuilder verifierBuilder =
+                    new JcaSimpleSignerInfoVerifierBuilder();
+            String sigProvider = null; // provider name to use when verifying signature
+            String algName;
 
-            // hardcoded, assume SPHICS+
-            if ("1.3.6.1.4.1.22554.2.5".equals(signer.getEncryptionAlgOID()) &&
-                    signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(publicKey))) {
+            HashMap<String, String> algNames = new HashMap<>();
+            algNames.put(BCObjectIdentifiers.dilithium2.getId(), "Dilithium2");
+            algNames.put(BCObjectIdentifiers.dilithium3.getId(), "Dilithium3");
+            algNames.put(BCObjectIdentifiers.dilithium5.getId(), "Dilithium5");
+
+            algName = algNames.get(algOid);
+
+            if (algName != null && algName.startsWith("Dilithium")) {
+                // Dilithium
+                verified = signer.verify(verifierBuilder.build(publicKey));
+                sigProvider = "BCPQC";
+            } else if (algOid.startsWith("1.3.6.1.4.1.22554.2.5")) {
+                // SPHINCS+
+                algName = "SPINCS+";
+                verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
+                sigProvider = "BC";
+            } else {
+                System.out.println("Unsupported Algorithm");
+                verified = false;
+            }
+            System.out.println("algName: " + algName);
+            if (verified) {
                 System.out.println("Verified");
 
                 X509CertSelector certSelector = new X509CertSelector();
@@ -158,7 +192,9 @@ public class VerifierApp {
                         })));
 
                 try {
-                    validatedSigner = validate(xcertStore, certSelector, trustAnchors, false);
+                    validatedSigner =
+                        validate(xcertStore, certSelector, trustAnchors, false,
+                                 sigProvider);
                     if (validatedSigner != null) {
                         break;
                     }
@@ -179,7 +215,13 @@ public class VerifierApp {
         }
     }
 
-    private static X509Certificate validate(CertStore certStore, X509CertSelector certSelector, Set<TrustAnchor> trustAnchors, boolean revocationEnabled) throws CertificateException, CertPathValidatorException, InvalidAlgorithmParameterException, Exception {
+    private static X509Certificate validate(CertStore certStore,
+                                            X509CertSelector certSelector,
+                                            Set<TrustAnchor> trustAnchors,
+                                            boolean revocationEnabled,
+                                            String sigProvider)
+            throws CertificateException, CertPathValidatorException,
+                   InvalidAlgorithmParameterException, Exception {
 
         PKIXBuilderParameters builderParams;
         builderParams = new PKIXBuilderParameters(trustAnchors, certSelector);
@@ -204,7 +246,7 @@ public class VerifierApp {
             builderParams.setRevocationEnabled(false);
             //builderParams.setMaxPathLength(maxPathLength);
             builderParams.setDate(new Date());
-            builderParams.setSigProvider("BC");
+            builderParams.setSigProvider(sigProvider);
 
             builderRes = (PKIXCertPathBuilderResult) builder.build(builderParams);
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException |

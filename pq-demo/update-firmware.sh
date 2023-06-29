@@ -40,7 +40,7 @@ function installFirmware() {
   local FILE=${INSTALLED_FIRMWARE}/${FIRMWARE_FILE}
   if [ -f "$FILE" ]; then
     echo "Existing firmware version: " $(cat $FILE)
-    echo "Expecting PQ (SPINCS+) signature for new firmware"
+    echo "Expecting PQ signature for new firmware"
 
     # verifiy subsequent update with the PQ verifier
     verifyPQ
