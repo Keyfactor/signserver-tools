@@ -162,7 +162,7 @@ public class VerifierApp {
                 // Dilithium
                 verified = signer.verify(verifierBuilder.build(publicKey));
                 sigProvider = "BCPQC";
-            } else if (algOid.startsWith("1.3.6.1.4.1.22554.2.5")) {
+            } else if (algOid.startsWith("1.3.9999.6.6.12")) {
                 // SPHINCS+
                 algName = "SPINCS+";
                 verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
