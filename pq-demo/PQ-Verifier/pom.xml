@@ -23,17 +23,17 @@
         <dependency>
             <artifactId>bcpkix-jdk18on</artifactId>
             <groupId>org.bouncycastle</groupId>
-            <version>1.78</version>
+            <version>1.79</version>
         </dependency>
         <dependency>
             <artifactId>bcprov-jdk18on</artifactId>
             <groupId>org.bouncycastle</groupId>
-            <version>1.78</version>
+            <version>1.79</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcutil-jdk18on</artifactId>
-            <version>1.78</version>
+            <version>1.79</version>
         </dependency>
     </dependencies>
     <build>

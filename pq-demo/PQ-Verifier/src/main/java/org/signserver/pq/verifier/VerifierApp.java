@@ -51,6 +51,7 @@ import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cms.CMSProcessableFile;
@@ -156,6 +157,23 @@ public class VerifierApp {
             algNames.put(BCObjectIdentifiers.dilithium3.getId(), "Dilithium3");
             algNames.put(BCObjectIdentifiers.dilithium5.getId(), "Dilithium5");
 
+            algNames.put(NISTObjectIdentifiers.id_ml_dsa_44.getId(), "ML-DSA-44");
+            algNames.put(NISTObjectIdentifiers.id_ml_dsa_65.getId(), "ML-DSA-65");
+            algNames.put(NISTObjectIdentifiers.id_ml_dsa_87.getId(), "ML-DSA-87");
+
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f.getId(), "SLH-DSA-SHA2-128F");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s.getId(), "SLH-DSA-SHA2-128S");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f.getId(), "SLH-DSA-SHA2-192F");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s.getId(), "SLH-DSA-SHA2-192S");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f.getId(), "SLH-DSA-SHA2-256F");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s.getId(), "SLH-DSA-SHA2-256S");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f.getId(), "SLH-DSA-SHAKE-128F");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s.getId(), "SLH-DSA-SHAKE-128S");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f.getId(), "SLH-DSA-SHAKE-192F");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s.getId(), "SLH-DSA-SHAKE-192S");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f.getId(), "SLH-DSA-SHAKE-256F");
+            algNames.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s.getId(), "SLH-DSA-SHAKE-256S");
+
             algName = algNames.get(algOid);
 
             if (algName != null && algName.startsWith("Dilithium")) {
@@ -165,6 +183,9 @@ public class VerifierApp {
             } else if (algOid.startsWith("1.3.9999.6.6.12")) {
                 // SPHINCS+
                 algName = "SPINCS+";
+                verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
+                sigProvider = "BC";
+            } else if (algName != null && (algName.startsWith("ML-DSA") || algName.startsWith("SLH-DSA"))) {
                 verified = signer.verify(verifierBuilder.setProvider("BC").build(publicKey));
                 sigProvider = "BC";
             } else {
